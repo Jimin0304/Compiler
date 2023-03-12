@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-void	expression(void);
-void	term(void);
-void	factor(void);
+int	expression(void);
+int	term(void);
+int	factor(void);
 void	error(int i);
 
 enum {NL, PLUS, STAR, NUMBER, LPAREN, RPAREN, END} token;
 char	ch;
+int	num;
 
 int	is_whitespace(int c)
 {
@@ -23,9 +25,33 @@ int	is_digit(int c)
 	return (0);
 }
 
+char	*ft_strcat(char *str, char ch)
+{
+	int	size;
+	char	*temp;
+
+	if (!str)
+	{
+		str = (char *)malloc(sizeof(char) * 2);
+		str[0] = ch;
+		str[1] = '\0';
+		return (str);
+	}
+	size = strlen(str);
+	temp = str;
+	str = (char *)malloc(sizeof(char) * (size + 2));
+	strcpy(str, temp);
+	str[size] = ch;
+	str[size + 1] = '\0';
+	free (temp);
+	return (str);
+}		
+
 void	get_token(void)
 {
-	ch = getchar();
+	char	*num_str;
+
+	num_str = NULL;
 	while (is_whitespace((int) ch) == 1)
 		ch = getchar();
 	if (ch == '+')
@@ -37,48 +63,71 @@ void	get_token(void)
 	else if (ch == ')')
 		token = RPAREN;
 	else if (is_digit((int) ch) == 1)
+	{
 		token = NUMBER;
+		num_str = ft_strcat(num_str, ch);
+		while (is_digit((int) ch) == 1)
+		{
+			ch = getchar();
+			num_str = ft_strcat(num_str, ch);
+		}
+		num = atoi(num_str);
+		return ;
+	}
 	else if (ch == EOF)
 		token = END;
 	else
 		token = NL;
+	ch = getchar();
 }
 
-void	expression(void)
+int	expression(void)
 {
-	term();
+	int	result;
+
+	result = term();
 	while (token == PLUS)
 	{
 		get_token();
-		term();
+		result = result + term();
 	}
+	return (result);
 }
 
-void	term(void)
+int	term(void)
 {
-	factor();
+	int	result;
+
+	result = factor();
 	while (token == STAR)
 	{
 		get_token();
-		factor();
+		result = result * factor();
 	}
+	return (result);
 }
 
-void	factor(void)
+int	factor(void)
 {
+	int	result;
+
 	if (token == NUMBER)
+	{
+		result = num;
 		get_token();
+	}
 	else if (token == LPAREN)
 	{
 		get_token();
-		expression();
+		result = expression();
 		if (token == RPAREN)
 			get_token();
 		else
 			error(2);
 	}
 	else
-		error(3);
+		error(1);
+	return (result);
 }
 
 void	error(int i)
@@ -86,13 +135,13 @@ void	error(int i)
 	printf("Syntax Error: ");
 	switch (i) {
 		case 1:
-			printf("Undefined tokens.\n");
+			printf("number of '(' expected.\n");
 			break ;
 		case 2:
-			printf("Unclosed parentheses.\n");
+			printf("')' expected.\n");
 			break ;
 		case 3:
-			printf("Undefined factors.\n");
+			printf("EOF expected.\n");
 			break ;
 	}
 	exit(1);
@@ -100,11 +149,14 @@ void	error(int i)
 
 int	main(void)
 {
+	int	result;
+
+	ch = getchar();
 	get_token();
-	expression();
+	result = expression();
 	if (token != END)
-		error(1);
+		error(3);
 	else
-		printf("Right Syntax !!\n");
+		printf("Right Syntax !!\nresult : %d\n", result);
 	return (0);
 }
